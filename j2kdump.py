@@ -5,8 +5,11 @@ import sys
 import struct
 
 def parse(data, length):
-	if (len(data) < length):
-		raise Exception("premature end in box (expecting %d bytes, finding %d bytes)" % (length, len(data)))
+	if len(data) == 0:
+		raise Exception("premature end in box (expecting %d bytes, no bytes left)" % length)
+	if len(data) < length:
+		print("premature end in box (expecting %d bytes, finding %d bytes), parsing what's available" % (length, len(data)))
+		return ([], data)
 	return (data[length:], data[0:length])
 
 def parse8(data):
@@ -103,7 +106,7 @@ def parsejp2headerbox(data):
 		elif boxtype == "\x72\x65\x73\x20":
 			parseresolutionbox(boxdata)
 		else:
-			print "unknown jp2 header box subbox of type: %s" % boxtype
+			print "ignoring unknown jp2 header box subbox of type: %s" % boxtype
 
 	return data
 
@@ -329,13 +332,18 @@ def parsestartoftilepartmarker(data):
 	(data, TNsot) = parse8(data)
 	print "jp2c.SOT.TNsot = %d" % TNsot
 
-	return (data, Psot - 12)
+	if Psot == 0:
+		return (data, 0)
+	else:
+		return (data, Psot - 12)
 
 def parsestartofdatamarker(data, length):
-	print "jp4c.SOD.data.length = %d" % length
+	print "jp2c.SOD.data.length = %d" % length
+
+	if length == 0:
+		return []
 
 	(data, _) = parse(data, length - 2)
-
 	return data
 
 def parseendofcodestreammarker(data):
@@ -538,7 +546,7 @@ def parsetilelengthmarker(data, Csiz):
 
 	return data
 
-def parsemarker(data, done, length, Csiz ):
+def parsemarker(data, done, length, Csiz):
 	(data, marker) = parse16(data)
 
 	if marker == 0xff4f:
@@ -573,8 +581,7 @@ def parsemarker(data, done, length, Csiz ):
 	elif marker == 0xff55:
 		data = parsetilelengthmarker(data, Csiz)
 	else:
-		print len(data)
-		raise Exception("unknown marker 0x%04x" % marker)
+		raise Exception("unknown marker 0x%04x with %d bytes left" % (marker, len(data)))
 
 	return (data, done, length, Csiz);
 
