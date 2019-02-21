@@ -19,12 +19,12 @@ def parse8(data):
 
 def parse16(data):
 	(data, value) = parse(data, 2)
-	value  = struct.unpack(">H", value)[0] 
+	value  = struct.unpack(">H", value)[0]
 	return (data, value)
 
 def parse32(data):
 	(data, value) = parse(data, 4)
-	value  = struct.unpack(">I", value)[0] 
+	value  = struct.unpack(">I", value)[0]
 	return (data, value)
 
 def parsearray(data, length):
@@ -94,17 +94,41 @@ def parsefiletype(data):
 
 	return data
 
+def parsecomponentdefinitionbox(data):
+	#print "component definition box (%d bytes)" % len(data)
+	if len(data) < 2:
+		raise Exception("premature end in component definition box")
+
+	(data, N) = parse16(data)
+	print "cdef.N = %d" % N
+
+	if len(data) < (2 + 2 + 2) * N:
+		raise Exception("premature end in component definition box")
+
+	for i in range(N):
+		(data, Cn) = parse16(data)
+		print "cdef.Cn[%d] = %d" % (i, Cn)
+		(data, Typ) = parse16(data)
+		print "cdef.Typ[%d] = %d" % (i, Typ)
+		(data, Asoc) = parse16(data)
+		print "cdef.Asoc[%d] = %d" % (i, Asoc)
+
+	return data
+
 def parsejp2headerbox(data):
 	#print "jp2 header box (%d bytes)" % len(data)
 
 	while len(data) > 0:
 		(data, boxtype, boxdata) = parsebox(data)
+		# missing: bpcc, pclr
 		if boxtype == "\x69\x68\x64\x72":
 			parseimageheaderbox(boxdata)
 		elif boxtype == "\x63\x6f\x6c\x72":
 			parsecolorspecificationbox(boxdata)
 		elif boxtype == "\x72\x65\x73\x20":
 			parseresolutionbox(boxdata)
+		elif boxtype == "\x63\x64\x65\x66":
+			parsecomponentdefinitionbox(boxdata)
 		else:
 			print "ignoring unknown jp2 header box subbox of type: %s" % boxtype
 
@@ -181,18 +205,6 @@ def parsecolorspecificationbox(data):
 
 	return data
 
-def parseresolutionbox(data):
-	#print "jp2 resolution box (%d bytes)" % len(data)
-
-	while len(data) > 0:
-		(data, boxtype, boxdata) = parsebox(data)
-		if boxtype == "\x72\x65\x73\x63":
-			parsecaptureresolutionbox(boxdata)
-		else:
-			print "unknown resolution box subbox of type: %s" % boxtype
-
-	return data
-
 def parsecaptureresolutionbox(data):
 	(data, VRcN) = parse16(data)
 	print "resc.VRcN = %d" % VRcN
@@ -211,6 +223,45 @@ def parsecaptureresolutionbox(data):
 
 	(data, HRcE) = parse8(data)
 	print "resc.HRcE = %d" % HRcE
+
+	return data
+
+def parsedefaultdisplayresolutionbox(data):
+	#print "default display resolution box (%d bytes)" % len(data)
+	if len(data) < 10:
+		raise Exception("premature end in default display resolution box")
+
+	(data, VRcN) = parse16(data)
+	print "resd.VRcN = %d" % VRcN
+
+	(data, VRcD) = parse16(data)
+	print "resd.VRcD = %d" % VRcD
+
+	(data, HRcN) = parse16(data)
+	print "resd.HRcN = %d" % HRcN
+
+	(data, HRcD) = parse16(data)
+	print "resd.HRcD = %d" % HRcD
+
+	(data, VRcE) = parse8(data)
+	print "resd.VRcE = %d" % VRcE
+
+	(data, HRcE) = parse8(data)
+	print "resd.HRcE = %d" % HRcE
+
+	return data
+
+def parseresolutionbox(data):
+	#print "jp2 resolution box (%d bytes)" % len(data)
+
+	while len(data) > 0:
+		(data, boxtype, boxdata) = parsebox(data)
+		if boxtype == "\x72\x65\x73\x63":
+			parsecaptureresolutionbox(boxdata)
+		if boxtype == "\x72\x65\x73\x64":
+			parsedefaultdisplayresolutionbox(boxdata)
+		else:
+			print "unknown resolution box subbox of type: %s" % boxtype
 
 	return data
 
@@ -284,11 +335,49 @@ def parsecodingstyledefaultmarker(data):
 	(data, Lcod) = parse16(data)
 	print "jp2c.COD.Lcod = %d" % Lcod
 
-	(data, Scod) = parse16(data)
-	print "jp2c.COD.Scod = %d" % Scod
+	if Lcod >= 1:
+		(data, Scod) = parse8(data)
+		print "jp2c.COD.Scod = %d" % Scod
+		Lcod = Lcod - 1
 
-	(data, SPcod) = parsearray(data, Lcod - 4)
-	print "jp2c.COD.SPcod = %s" % SPcod
+	if Lcod >= 1:
+		(data, order) = parse8(data)
+		print "jp2c.COD.SGcod.Progression order = %d" % order
+		Lcod = Lcod - 1
+
+	if Lcod >= 2:
+		(data, layers) = parse16(data)
+		print "jp2c.COD.SGcod.Number of layers = %d" % layers
+		Lcod = Lcod - 2
+
+	if Lcod >= 1:
+		(data, multitransform) = parse8(data)
+		print "jp2c.COD.SGcod.Multiple component transformation = %d" % multitransform
+		Lcod = Lcod - 1
+
+	if Lcod >= 1:
+		(data, levels) = parse8(data)
+		print "jp2c.COD.SPcod.Number of decomposition levels = %d" % levels
+
+	if Lcod >= 1:
+		(data, width) = parse8(data)
+		print "jp2c.COD.SPcod.Code-block width = %d" % width
+
+	if Lcod >= 1:
+		(data, height) = parse8(data)
+		print "jp2c.COD.SPcod.Code-block height = %d" % height
+
+	if Lcod >= 1:
+		(data, style) = parse8(data)
+		print "jp2c.COD.SPcod.Code-block style = %d" % style
+
+	if Lcod >= 1:
+		(data, transform) = parse8(data)
+		print "jp2c.COD.SPcod.Transform = %d" % transform
+
+	if Scod & 1 == 1 and Lcod >= 1:
+		(data, size) = parse8(data)
+		print "jp2c.COD.SPcod.Precinct size = %d" % size
 
 	return data
 
@@ -541,8 +630,6 @@ def parsetilelengthmarker(data, Csiz):
 		elif SP == 1:
 			(data, Ptlm) = parse32(data)
 			print "jp2c.TLM.Ptlm%d = %d" % (i, Ptlm)
-		
-	
 
 	return data
 
@@ -619,6 +706,7 @@ for path in sys.argv[1:]:
 		else:
 			while len(data) > 0:
 				(data, boxtype, boxdata) = parsebox(data)
+				# missing: prfl, jp2i, xml_, uinf
 				if boxtype == "\x6a\x50\x20\x20":
 					boxdata = parsejp2signaturebox(boxdata)
 				elif boxtype == "\x66\x74\x79\x70":
