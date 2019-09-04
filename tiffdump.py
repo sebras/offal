@@ -54,7 +54,7 @@ def parsestring(data, length):
 	return (data[length:], s)
 
 def parseheader(data):
-        (data, byteorder) = parse16(data)
+        (data, byteorder) = parse16le(data)
         print "hdr.byteorder = %04x" % byteorder
 
 	if byteorder == 0x4949:
@@ -63,7 +63,7 @@ def parseheader(data):
 	elif byteorder == 0x4d4d:
 		(data, magic) = parse16be(data)
 		(data, ifdoffset) = parse32be(data)
-	else
+	else:
 		raise Exception("unknown byteorder");
 
 	print "hdr.magic = %04x" % magic
