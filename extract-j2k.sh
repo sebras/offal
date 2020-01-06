@@ -4,7 +4,7 @@ while [ $# -gt 0 ]; do
     FILE="$1"
     echo "$FILE"
 
-    OBJS=$(mutool show "$FILE" grep 2> /dev/null | grep JPXDecode | cut -d: -f2)
+    OBJS=$(mutool show "$FILE" grep 2> /dev/null | grep JPXDecode | cut -d' ' -f1)
 
     HEREFILE="$(basename "$FILE")"
 
