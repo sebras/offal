@@ -636,37 +636,41 @@ def parsetilelengthmarker(data, Csiz):
 def parsemarker(data, done, length, Csiz):
 	(data, marker) = parse16(data)
 
-	if marker == 0xff4f:
+	# ITU-T T.81 ff00-ff01, ffc0-ffdf, fffe
+	if marker == 0xffd9:
+		done = True
+		data = parseendofcodestreammarker(data)
+	elif marker == 0xffda:
+		data = parsestartofscanmarker(data, Csiz)
+	# ITU-T T.84 fff0-fff6
+	# ITU-T T.87 fff7-fff8
+	# ITU-T T.800 ff4f-ff6f, ff90-ff93
+	elif marker == 0xff4f:
 		data = parsestartofcodestreammarker(data)
 	elif marker == 0xff51:
 		(data, Csiz) = parseimageandtilesizemarker(data)
 	elif marker == 0xff52:
 		data = parsecodingstyledefaultmarker(data)
-	elif marker == 0xff5c:
-		data = parsequantizationdefaultmarker(data)
-	elif marker == 0xff64:
-		data = parsecommentandextensionmarker(data)
-	elif marker == 0xff90:
-		(data, length) = parsestartoftilepartmarker(data)
-	elif marker == 0xff93:
-		data = parsestartofdatamarker(data, length)
-	elif marker == 0xffd9:
-		done = True
-		data = parseendofcodestreammarker(data)
 	elif marker == 0xff53:
 		data = parsecodingstylecomponentmarker(data, Csiz)
-	elif marker == 0xffda:
-		data = parsestartofscanmarker(data, Csiz)
-	elif marker == 0xff30:
-		data = parsereservedmarker(data)
+	elif marker == 0xff55:
+		data = parsetilelengthmarker(data, Csiz)
+	elif marker == 0xff5c:
+		data = parsequantizationdefaultmarker(data)
 	elif marker == 0xff5d:
 		data = parsequantizationcomponentmarker(data, Csiz)
 	elif marker == 0xff5e:
 		data = parseregionofinterestmarker(data, Csiz)
 	elif marker == 0xff5f:
 		data = parseprogressionorderchangemarker(data, Csiz)
-	elif marker == 0xff55:
-		data = parsetilelengthmarker(data, Csiz)
+	elif marker == 0xff64:
+		data = parsecommentandextensionmarker(data)
+	elif marker == 0xff90:
+		(data, length) = parsestartoftilepartmarker(data)
+	elif marker == 0xff93:
+		data = parsestartofdatamarker(data, length)
+	elif marker >= 0xff30 and marker <= 0xff3f:
+		data = parsereservedmarker(data)
 	else:
 		raise Exception("unknown marker 0x%04x with %d bytes left" % (marker, len(data)))
 
