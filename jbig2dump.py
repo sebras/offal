@@ -161,6 +161,9 @@ def parsesegment(f, sequential):
     if sequential:
         f.read(length)
 
+    if typ == 51:
+        print "End of segments at %u" % (f.tell() - 1)
+
     return typ == 51
 
 for fn in sys.argv[1:]:
