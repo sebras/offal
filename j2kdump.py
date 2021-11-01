@@ -115,12 +115,53 @@ def parsecomponentdefinitionbox(data):
 
 	return data
 
+def parsepalettebox(data):
+	#print "palette box (%d bytes)" % len(data)
+	if len(data) < 2:
+		raise Exception("premature end in palette box")
+
+	(data, NE) = parse16(data)
+	print "pclr.NE = %d" % NE
+
+	(data, NPC) = parse8(data)
+	print "pclr.NPC = %d" % NPC
+
+	if len(data) < NPC:
+		raise Exception("premature end in palette box")
+
+	B = []
+	Esize = 0
+	sgnd = []
+
+	for i in range(NPC):
+		(data, b) = parse8(data)
+
+		if b >= 128:
+			sgnd.append(True)
+			b = b - 128
+		else:
+			sgnd.append(False)
+		b = b + 1
+		B.append(b)
+
+		Esize = Esize + (b + 7) / 8
+
+		if sgnd[i]:
+			print "pclr.B[%d] = %d (signed)" % (i, b)
+		else:
+			print "pclr.B[%d] = %d (unsigned)" % (i, b)
+
+	if len(data) < NE * Esize:
+		raise Exception("premature end in palette box")
+
+	return data
+
 def parsejp2headerbox(data):
 	#print "jp2 header box (%d bytes)" % len(data)
 
 	while len(data) > 0:
 		(data, boxtype, boxdata) = parsebox(data)
-		# missing: bpcc, pclr
+		# missing: bpcc
 		if boxtype == "\x69\x68\x64\x72":
 			parseimageheaderbox(boxdata)
 		elif boxtype == "\x63\x6f\x6c\x72":
@@ -129,6 +170,8 @@ def parsejp2headerbox(data):
 			parseresolutionbox(boxdata)
 		elif boxtype == "\x63\x64\x65\x66":
 			parsecomponentdefinitionbox(boxdata)
+		elif boxtype == "\x70\x63\x6c\x72":
+			parsepalettebox(boxdata)
 		else:
 			print "ignoring unknown jp2 header box subbox of type: %s" % boxtype
 
