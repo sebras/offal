@@ -633,6 +633,18 @@ def parsetilelengthmarker(data, Csiz):
 
 	return data
 
+def parsepacketlengthmarker(data, Csiz):
+	(data, Lplt) = parse16(data)
+	print "jp2c.PLT.Lplt = %d" % Lplt
+
+	(data, Zplt) = parse8(data)
+	print "jp2c.PLT.Zplt = %d" % Zplt
+
+	for i in range(Lplt - 3):
+		(data, _) = parse8(data)
+
+	return data
+
 def parsemarker(data, done, length, Csiz):
 	(data, marker) = parse16(data)
 
@@ -655,6 +667,8 @@ def parsemarker(data, done, length, Csiz):
 		data = parsecodingstylecomponentmarker(data, Csiz)
 	elif marker == 0xff55:
 		data = parsetilelengthmarker(data, Csiz)
+	elif marker == 0xff58:
+		data = parsepacketlengthmarker(data, Csiz)
 	elif marker == 0xff5c:
 		data = parsequantizationdefaultmarker(data)
 	elif marker == 0xff5d:
