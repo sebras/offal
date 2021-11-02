@@ -141,8 +141,7 @@ def parsepalettebox(data):
 		else:
 			print "pclr.B[%d] = %d (unsigned)" % (i, b)
 
-	if len(data) < NE * Esize:
-		raise Exception("premature end in palette box")
+	(data, _) = parse(data, NE * Esize)
 
 	return data
 
