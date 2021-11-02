@@ -750,6 +750,63 @@ def parsecontiguouscodestreambox(data):
 
 	return data
 
+def parsereaderrequirementsbox(data):
+	#print "reader requirements box (%d bytes)" % len(data)
+
+	(data, ML) = parse8(data)
+	print "rreq.ML = %d" % ML
+
+	if ML == 1:
+		(data, FUAM) = parse8(data)
+		(data, DCM) = parse8(data)
+	elif ML == 2:
+		(data, FUAM) = parse16(data)
+		(data, DCM) = parse16(data)
+	elif ML == 4:
+		(data, FUAM) = parse32(data)
+		(data, DCM) = parse32(data)
+	elif ML == 8:
+		(data, FUAM) = parse64(data)
+		(data, DCM) = parse64(data)
+	print "rreq.FUAM = %d" % FUAM
+	print "rreq.DCM = %d" % DCM
+
+	(data, NSF) = parse16(data)
+	print "rreq.NSF = %d" % NSF
+
+	for i in range(NSF):
+		(data, SF) = parse16(data)
+		print "rreq.SF[%d] = %d" % (i, SF)
+
+		if ML == 1:
+			(data, SM) = parse8(data)
+		elif ML == 2:
+			(data, SM) = parse16(data)
+		elif ML == 4:
+			(data, SM) = parse32(data)
+		elif ML == 8:
+			(data, SM) = parse64(data)
+		print "rreq.SM[%d] = %d" % (i, SM)
+
+	(data, NVF) = parse16(data)
+	print "rreq.NVF = %d" % NVF
+
+	for i in range(NVF):
+		(data, VF) = parse(data, 128 / 8)
+		print "rreq.VF[%d] = %r" % (i, VF)
+
+		if ML == 1:
+			(data, VM) = parse8(data)
+		elif ML == 2:
+			(data, VM) = parse16(data)
+		elif ML == 4:
+			(data, VM) = parse32(data)
+		elif ML == 8:
+			(data, VM) = parse64(data)
+		print "rreq.VM[%d] = %d" % (i, VM)
+
+	return data
+
 def hasjp2signaturebox(data):
 	if len(data) < 12:
 		return False
@@ -784,6 +841,8 @@ for path in sys.argv[1:]:
 				elif boxtype == "\x6a\x70\x32\x63":
 					data = parsecontiguouscodestreambox(boxdata)
 					boxdata = []
+				elif boxtype == "\x72\x72\x65\x71":
+					boxdata = parsereaderrequirementsbox(boxdata)
 				else:
 					print "ignoring unknown box of type: %s" % boxtype
 					boxdata = []
