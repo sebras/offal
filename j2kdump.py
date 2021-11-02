@@ -146,6 +146,23 @@ def parsepalettebox(data):
 
 	return data
 
+def parsecomponentmappingbox(data):
+	print "component mapping box (%d bytes)" % len(data)
+
+	if len(data) % 4 != 0:
+		raise Exception("premature end in component mapping box")
+
+	entries = len(data) / 4
+	for i in range(entries):
+		(data, CMP) = parse16(data)
+		print "cmap.CMP[%d] = %d" % (i, CMP)
+		(data, MTYP) = parse8(data)
+		print "cmap.MTYP[%d] = %d" % (i, MTYP)
+		(data, PCOL) = parse8(data)
+		print "cmap.PCOL[%d] = %d" % (i, PCOL)
+
+	return data
+
 def parsejp2headerbox(data):
 	#print "jp2 header box (%d bytes)" % len(data)
 
@@ -162,6 +179,8 @@ def parsejp2headerbox(data):
 			parsecomponentdefinitionbox(boxdata)
 		elif boxtype == "\x70\x63\x6c\x72":
 			parsepalettebox(boxdata)
+		elif boxtype == "\x63\x6d\x61\x70":
+			parsecomponentmappingbox(boxdata)
 		else:
 			print "ignoring unknown jp2 header box subbox of type: %s" % boxtype
 
