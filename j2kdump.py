@@ -96,14 +96,9 @@ def parsefiletype(data):
 
 def parsecomponentdefinitionbox(data):
 	#print "component definition box (%d bytes)" % len(data)
-	if len(data) < 2:
-		raise Exception("premature end in component definition box")
 
 	(data, N) = parse16(data)
 	print "cdef.N = %d" % N
-
-	if len(data) < (2 + 2 + 2) * N:
-		raise Exception("premature end in component definition box")
 
 	for i in range(N):
 		(data, Cn) = parse16(data)
@@ -117,17 +112,12 @@ def parsecomponentdefinitionbox(data):
 
 def parsepalettebox(data):
 	#print "palette box (%d bytes)" % len(data)
-	if len(data) < 2:
-		raise Exception("premature end in palette box")
 
 	(data, NE) = parse16(data)
 	print "pclr.NE = %d" % NE
 
 	(data, NPC) = parse8(data)
 	print "pclr.NPC = %d" % NPC
-
-	if len(data) < NPC:
-		raise Exception("premature end in palette box")
 
 	B = []
 	Esize = 0
@@ -179,8 +169,6 @@ def parsejp2headerbox(data):
 
 def parseimageheaderbox(data):
 	#print "image header box (%d bytes)" % len(data)
-	if len(data) < 14:
-		raise Exception("premature end in image header box")
 
 	(data, HEIGHT) = parse32(data)
 	print "ihdr.HEIGHT = %d" % HEIGHT
@@ -271,8 +259,6 @@ def parsecaptureresolutionbox(data):
 
 def parsedefaultdisplayresolutionbox(data):
 	#print "default display resolution box (%d bytes)" % len(data)
-	if len(data) < 10:
-		raise Exception("premature end in default display resolution box")
 
 	(data, VRcN) = parse16(data)
 	print "resd.VRcN = %d" % VRcN
