@@ -58,16 +58,16 @@ def parsesegment(f, sequential):
     print "Parsing new segment at %u" % f.tell()
 
     nbr = readint(f);
-    print "segment: %u" % nbr
+    print "segment number: %u (0x%08x)" % (nbr, nbr)
 
     flags = readbyte(f);
-    print "\tflags: 0x%x" % flags
+    print "\tsegment header flags: 0x%02x" % flags
     
     deferred = (flags >> 7) & 1
-    print "\t\tdeferred: %u" % deferred
+    print "\t\tdeferred non-retain: %u" % deferred
 
     assocation = (flags >> 6) & 1
-    print "\t\tassocation: %u" % assocation
+    print "\t\tpage assocation size: %u" % assocation
 
     typ = flags & 0x3f
     if typ == 0:
@@ -104,16 +104,19 @@ def parsesegment(f, sequential):
         s = "extension"
     else:
         s = "UNKNOWN"
-    print "\t\ttype: %s (%d)" % (s, typ)
+    print "\t\tsegment type: %s (%d)" % (s, typ)
 
     referrals = readbyte(f)
-    if (referrals >> 5) & 7 == 7:
+    segments = (referrals >> 5) & 0x7
+    if segments == 7:
         referrals = (referrals << 8) | readbyte(f)
         referrals = (referrals << 8) | readbyte(f)
         referrals = (referrals << 8) | readbyte(f)
-        print "\treferrals: 0x%x" % referrals
+        print "\treferrals: 0x%08x" % referrals
 
-        segments = referrals & 0x1fff
+        print "\t\tlong form indicator: 0x%01x" % segments
+
+        segments = referrals & 0x1fffffff
         print "\t\tsegments: %u" % segments
 
         rts = (segments + 1) / 8
@@ -126,12 +129,12 @@ def parsesegment(f, sequential):
             for i in range(8):
                 retain.append((rt >> i) & 1)
         print "\t\tretain: %s" % retain
-
     else:
-        print "\treferrals: 0x%x" % referrals
-
-        segments = (referrals >> 5) & 7
+        print "\treferrals: 0x%02x" % referrals
         print "\t\tsegments: %u" % segments
+
+	if segments == 5 or segments == 6:
+		print "\t\tinvalid number of segments!"
 
         retain = []
         for i in range(5):
@@ -150,7 +153,7 @@ def parsesegment(f, sequential):
         page = readbyte(f)
     else:
         page = readint(f)
-    print "\tpage: %u" % page
+    print "\tpage association: %u" % page
 
     length = readint(f)
     if length == 0xffffffff:
